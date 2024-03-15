@@ -1,6 +1,11 @@
 #include <nds.h>
 #include "libtwl/card/card.h"
 
+typedef union packedUInt_t {
+    u32 value;
+    u8 i[sizeof(u32)];
+} PackedUInt;
+
 void card_romCpuRead(u32* dst, u32 words)
 {
     u32* target = dst + words;
@@ -24,13 +29,13 @@ void card_romCpuReadUnaligned(u8* dst, u32 words)
         // Read data if available
         if (card_romIsDataReady())
         {
-            u32 data = card_romGetData();
+            PackedUInt data;
+            data.value = card_romGetData();
             if (dst < target)
             {
-                *dst++ = data & 0xFF;
-                *dst++ = (data >> 8) & 0xFF;
-                *dst++ = (data >> 16) & 0xFF;
-                *dst++ = (data >> 24) & 0xFF;
+                for(int i = 0; i < 4; i++){
+                    *dst++ = (data.value >> (i * 8)) & 0xFF;
+                }
             }
         }
     } while (card_romIsBusy());
@@ -52,9 +57,9 @@ void card_romCpuWrite(const u32* src, u32 words)
     } while (card_romIsBusy());
 }
 
-void card_romCpuWriteUnaligned(const u8* src, u32 words)
+void NO_MEMCPY card_romCpuWriteUnaligned(const u8* src, u32 words)
 {
-    u32 data = 0;
+    PackedUInt data;
     const u8* target = src + (words << 2);
     do
     {
@@ -63,7 +68,9 @@ void card_romCpuWriteUnaligned(const u8* src, u32 words)
         {
             if (src < target)
             {
-                data = src[0] | (src[1] << 8) | (src[2] << 16) | (src[3] << 24);
+                for(int i = 0; i < 4; i++){
+                    data.i[i] = src[i];
+                }
                 src += 4;
             }
             card_romSetData(data);
