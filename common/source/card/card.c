@@ -21,7 +21,7 @@ void card_romCpuRead(u32* dst, u32 words)
     } while (card_romIsBusy());
 }
 
-void card_romCpuReadUnaligned(u8* dst, u32 words)
+void NO_MEMCPY card_romCpuReadUnaligned(u8* dst, u32 words)
 {
     u8* target = dst + (words << 2);
     do
@@ -34,7 +34,7 @@ void card_romCpuReadUnaligned(u8* dst, u32 words)
             if (dst < target)
             {
                 for(int i = 0; i < 4; i++){
-                    *dst++ = (data.value >> (i * 8)) & 0xFF;
+                    *dst++ = data.i[i];
                 }
             }
         }
